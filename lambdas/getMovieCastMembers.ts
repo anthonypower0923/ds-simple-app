@@ -4,6 +4,7 @@ import {
   DynamoDBDocumentClient,
   QueryCommand,
   QueryCommandInput,
+  GetCommand
 } from "@aws-sdk/lib-dynamodb";
 
 const ddbDocClient = createDocumentClient();
@@ -34,6 +35,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
     let commandInput: QueryCommandInput = {
       TableName: process.env.CAST_TABLE_NAME,
  };
+
     if ("roleName" in queryParams) {
       commandInput = {
  ...commandInput,
@@ -47,7 +49,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
  } else if ("actorName" in queryParams) {
       commandInput = {
  ...commandInput,
-        KeyConditionExpression: "movieId = :m and begins_with(actorName, :a) ",
+        KeyConditionExpression: "movieId = :m and begins_with(actorName, :a)",
         ExpressionAttributeValues: {
           ":m": movieId,
           ":a": queryParams.actorName,
@@ -63,18 +65,37 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
  };
  }
 
+ const movieCommandOutput = await ddbDocClient.send(
+    new GetCommand({
+      TableName: process.env.TABLE_NAME,
+      Key: { id: 1 },
+    })
+  );
+
+    if ('facts' in queryParams) {
+        const movieCommandOutput = await ddbDocClient.send(
+            new GetCommand({
+              TableName: process.env.TABLE_NAME,
+              Key: { id: movieId },
+            })
+          );
+    }
+
     const commandOutput = await ddbDocClient.send(
       new QueryCommand(commandInput)
  );
+
+    const body = {
+        data: commandOutput.Items,
+        movie: movieCommandOutput.Item
+    };
 
     return {
       statusCode: 200,
       headers: {
         "content-type": "application/json",
  },
-      body: JSON.stringify({
-        data: commandOutput.Items,
- }),
+      body: JSON.stringify(body),
  };
  } catch (error: any) {
     console.log(JSON.stringify(error));

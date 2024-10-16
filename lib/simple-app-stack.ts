@@ -122,6 +122,7 @@ export class SimpleAppStack extends cdk.Stack {
         memorySize: 128,
         environment: {
           CAST_TABLE_NAME: movieCastsTable.tableName,
+          TABLE_NAME: moviesTable.tableName,
           REGION: "eu-west-1",
  },
  }
@@ -136,9 +137,11 @@ export class SimpleAppStack extends cdk.Stack {
 
     moviesTable.grantReadData(getMovieByIdFn)
     moviesTable.grantReadData(getAllMoviesFn)
+    moviesTable.grantReadData(getMovieCastMembersFn)
     movieCastsTable.grantReadData(getMovieCastMembersFn);
 
-    new cdk.CfnOutput(this, "Get All Movies", { value: getAllMovies.url });
+    
+    // new cdk.CfnOutput(this, "Get All Movies", { value: getAllMovies.url });
     new cdk.CfnOutput(this, "Get Movie Cast Url", {
       value: getMovieCastMembersURL.url,
  });
